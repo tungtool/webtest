@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TransactionType {
+  EARN
+  REDEEM
+  ADMIN_ADJUST
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  name         String
+  passwordHash String
+  role         Role          @default(USER)
+  points       Int           @default(0)
+  isLocked     Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  transactions Transaction[]
+  orders       RewardOrder[]
+  linkLogs     LinkLog[]
+  notifications Notification[]
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  points      Int
+  category    String   
+  linkUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Reward {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  pointCost   Int
+  category    String        
+  imageUrl    String?
+  stock       Int           @default(100)
+  isActive    Boolean       @default(true)
+  orders      RewardOrder[]
+  createdAt   DateTime      @default(now())
+}
+
+model RewardOrder {
+  id          String      @id @default(uuid())
+  userId      String
+  rewardId    String
+  pointCost   Int
+  status      OrderStatus @default(PENDING)
+  code        String?     
+  user        User        @relation(fields: [userId], references: [id])
+  reward      Reward      @relation(fields: [rewardId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  userId      String
+  amount      Int
+  type        TransactionType
+  description String
+  user        User            @relation(fields: [userId], references: [id])
+  createdAt   DateTime        @default(now())
+}
+
+model LinkLog {
+  id        String   @id @default(uuid())
+  userId    String
+  url       String
+  status    String   
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
